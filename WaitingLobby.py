@@ -26,6 +26,7 @@ class WaitingLobby(Screen):
         for addr in server.get_clients_addr():
             self.players_box.add_widget(Label(text=str(addr)))
         # Tu peux appeler cette méthode régulièrement avec Clock si tu veux du live
+        
     def go_partie(self, instance):
         for addr in server.get_clients_addr():
             self.manager.current = "partie"

@@ -7,12 +7,12 @@ from kivy.uix.image import Image
 import client
 import server
 import threading
-import game
+import Jeu
+from Jeu import Jeu
+
 
 class Partie(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        layout = BoxLayout(orientation='vertical')
-        img = Image(source="img/base.jpg")
-        self.add_widget(img)
-        self.add_widget(layout)
+        cartes = BoxLayout(orientation='horizontal', size_hint_y=0.3)
+        self.add_widget(cartes)

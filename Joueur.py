@@ -1,5 +1,6 @@
 from Paquet import Paquet
 from Carte import Carte
+from kivy.app import App
 class Joueur():
     def __init__(self, paquet, pseudo, socket):
         super().__init__()
@@ -49,4 +50,8 @@ class Joueur():
             if "Choisis la meilleure" in msg:
                 choix = input("Qui gagne ? ")
                 socket.sendall(choix.encode("utf-8"))
+    def afficherCartes(self):
+        self.clear_widgets()
+        for c in self.cartes:
+            self.add_widget()
 
