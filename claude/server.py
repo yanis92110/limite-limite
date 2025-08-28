@@ -24,7 +24,7 @@ def creer_serveur():
         threading.Thread(target=handle_client, args=(client, ("127.0.0.1", 5000)), daemon=True).start()
 
     # Appeler la fonction pour que l'hébergeur rejoigne automatiquement
-    rejoindre_en_tant_que_client()
+    #rejoindre_en_tant_que_client()
 
     
     while True:

@@ -14,6 +14,7 @@ import threading
 import socket
 import server
 import random
+import os
 
 class Partie(Screen):
     def __init__(self, **kwargs):
@@ -58,8 +59,7 @@ class Partie(Screen):
         # Zone carte noire actuelle
         carte_noire_layout = BoxLayout(orientation='vertical', size_hint_y=0.2)
         titre_carte_noire = Label(text="🃏 CARTE NOIRE (QUESTION)", font_size=16, bold=True)
-        num_carte_noire = random.randint(1, 369)
-        self.img_carte_noire = Image(source=f"/img_noires/{num_carte_noire}.jpg")
+        self.img_carte_noire = Image(source="img_noires/1.jpg")  # Image par défaut
         carte_noire_layout.add_widget(titre_carte_noire)
         carte_noire_layout.add_widget(self.img_carte_noire)
         main_layout.add_widget(carte_noire_layout)
@@ -196,25 +196,24 @@ class Partie(Screen):
             
             # Mettre à jour la carte noire
             if self.game_client.carte_noire_actuelle:
-                carte = self.game_client.carte_noire_actuelle
-                self.img_carte_noire.source = carte['lien']
+                carte_id = self.game_client.carte_noire_actuelle
+                self.img_carte_noire.source = f"img_noires/{carte_id}.jpg"
     
-    def afficher_main(self, cartes):
+    def afficher_main(self, cartes_ids):
         """Affiche les cartes de la main du joueur sous forme d'images"""
         self.grid_cartes.clear_widgets()
-        self.main_joueur = cartes
+        self.main_joueur = cartes_ids
 
-        if not cartes:
+        if not cartes_ids:
             self.grid_cartes.add_widget(Label(text="Aucune carte", size_hint_y=None, height=40))
             return
 
-        for i, carte in enumerate(cartes):
-            # carte['lien'] doit être le chemin de l'image
+        for i, carte_id in enumerate(cartes_ids):
             btn_carte = Button(
                 size_hint_y=None,
                 height=120,
-                background_normal=carte['lien'],
-                background_down=carte['lien'],
+                background_normal=f"img_blanches/{carte_id}.jpg",
+                background_down=f"img_blanches/{carte_id}.jpg",
                 text=f"{i}",
                 color=(1, 1, 1, 0),  # texte invisible
             )
@@ -263,12 +262,10 @@ class Partie(Screen):
 
         for choice in choix:
             pseudo = choice['pseudo']
-            carte = choice['carte']
-            # carte doit être un objet ou dict avec getLien() ou 'lien'
-            lien_img = carte['lien']
+            carte_id = choice['carte_id']
 
             box = BoxLayout(orientation='vertical', size_hint_y=None, height=150, spacing=5)
-            img = Image(source=lien_img, size_hint_y=0.7)
+            img = Image(source=f"img_blanches/{carte_id}.jpg", size_hint_y=0.7)
             btn_choix = Button(
                 text=f"🎭 {pseudo}",
                 size_hint_y=0.3,
@@ -324,6 +321,8 @@ class Partie(Screen):
             lambda dt: setattr(self.label_instructions, 'text', "⏳ Préparation de la prochaine manche..."), 
             3.0
         )
+    
+    def afficher_fin_de_partie(self, gagnant, scores):
         """Affiche les résultats de fin de partie"""
         self.partie_terminee = True
         
@@ -383,10 +382,10 @@ class GameClientGUI:
         self.socket = None
         self.connected = False
         self.pseudo = ""
-        self.main = []
+        self.main = []  # Main sous forme de liste d'IDs de cartes
         self.is_roi = False
         self.score = 0
-        self.carte_noire_actuelle = None
+        self.carte_noire_actuelle = None  # ID de la carte noire actuelle
         self.en_jeu = False
     
     def rejoindre_serveur(self, pseudo, host="127.0.0.1", port=5000):
@@ -451,7 +450,7 @@ class GameClientGUI:
             self.partie_screen.label_instructions.text = f"🎮 Partie démarrée avec {len(joueurs)} joueurs!"
             
         elif action == "update_hand":
-            self.main = message.get("cartes", [])
+            self.main = message.get("cartes", [])  # Liste d'IDs de cartes
             self.is_roi = message.get("is_roi", False)
             self.score = message.get("score", 0)
             
@@ -459,7 +458,7 @@ class GameClientGUI:
             self.partie_screen.afficher_main(self.main)
             
         elif action == "new_black_card":
-            self.carte_noire_actuelle = message.get("carte")
+            self.carte_noire_actuelle = message.get("carte")  # ID de la carte noire
             roi = message.get("roi")
             manche = message.get("manche")
             
@@ -495,7 +494,7 @@ class GameClientGUI:
             }
             try:
                 self.socket.send(json.dumps(message).encode('utf-8'))
-                print(f"Carte {index} jouée: {self.main[index]['lien']}")
+                print(f"Carte {index} jouée: {self.main[index]}")
             except Exception as e:
                 print(f"Erreur envoi carte: {e}")
     
