@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>Aisselle Emeute Caca</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header - État du jeu */
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .status {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .connection-info {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* Zone de connexion */
+        .connection-panel {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .connection-panel h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .connection-panel input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+        }
+
+        .connection-panel button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .connection-panel button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Container principal */
+        .game-container {
+            display: none;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .game-container.active {
+            display: block;
+        }
+
+        /* Carte centrale */
+        .central-card-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .central-card {
+            display: inline-block;
+            background: #1a1a1a;
+            border: 3px solid #fff;
+            border-radius: 15px;
+            padding: 20px;
+            width: 250px;
+            height: 350px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Cartes jouées */
+        .played-cards-area {
+            margin-bottom: 30px;
+        }
+
+        .played-cards-area h3 {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .played-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            min-height: 100px;
+        }
+
+        /* Main du joueur */
+        .hand-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .hand-area h3 {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .hand-cards {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            padding-bottom: 10px;
+        }
+
+        /* Cartes */
+        .card {
+            background: white;
+            color: black;
+            border-radius: 12px;
+            padding: 15px;
+            width: 200px;
+            min-height: 280px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 16px;
+            line-height: 1.4;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        .card.clickable {
+            border: 3px solid #4CAF50;
+        }
+
+        .card.clickable:hover {
+            border-color: #FFC107;
+        }
+
+        .card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .card.disabled:hover {
+            transform: none;
+        }
+
+        /* Carte noire (centrale) */
+        .card.black {
+            background: #1a1a1a;
+            color: white;
+            font-weight: bold;
+            border: 3px solid white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .card {
+                width: 150px;
+                min-height: 220px;
+                font-size: 14px;
+                padding: 10px;
+            }
+
+            .central-card {
+                width: 200px;
+                height: 280px;
+                font-size: 18px;
+            }
+
+            .hand-area {
+                padding: 10px;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .card {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Badge roi */
+        .crown-badge {
+            display: inline-block;
+            background: gold;
+            color: black;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="status" id="status">En attente de connexion...</div>
+        <div class="connection-info" id="connection-info"></div>
+    </div>
+
+    <!-- Panneau de connexion -->
+    <div class="connection-panel" id="connectionPanel">
+        <h2>🎮 Rejoindre la partie</h2>
+        <input type="text" id="serverUrl" placeholder="Adresse serveur (ex: ws://192.168.1.10:8080)" value="ws://localhost:8080">
+        <input type="text" id="playerName" placeholder="Votre pseudo">
+        <button onclick="connect()">Se connecter</button>
+    </div>
+
+    <!-- Zone de jeu -->
+    <div class="game-container" id="gameContainer">
+        <!-- Carte centrale -->
+        <div class="central-card-area">
+            <div class="central-card black" id="centralCard">
+                En attente de la carte centrale...
+            </div>
+        </div>
+
+        <!-- Cartes jouées -->
+        <div class="played-cards-area">
+            <h3>Cartes jouées</h3>
+            <div class="played-cards" id="playedCards"></div>
+        </div>
+
+        <!-- Main du joueur -->
+        <div class="hand-area">
+            <h3>Vos cartes</h3>
+            <div class="hand-cards" id="handCards"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let playerName = '';
+        let isKing = false;
+        let hasPlayed = false;
+        let myCards = [];
+
+        // Connexion au serveur
+        function connect() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            playerName = document.getElementById('playerName').value;
+
+            if (!playerName.trim()) {
+                alert('Veuillez entrer un pseudo !');
+                return;
+            }
+
+            document.getElementById('connection-info').textContent = 'Connexion en cours...';
+
+            try {
+                ws = new WebSocket(serverUrl);
+
+                ws.onopen = () => {
+                    console.log('✅ Connecté au serveur');
+                    ws.send('CONNEXION:' + playerName);
+                    document.getElementById('connectionPanel').style.display = 'none';
+                    document.getElementById('gameContainer').classList.add('active');
+                    document.getElementById('connection-info').textContent = 'Connecté en tant que ' + playerName;
+                };
+
+                ws.onmessage = (event) => {
+                    handleMessage(event.data);
+                };
+
+                ws.onerror = (error) => {
+                    console.error('❌ Erreur WebSocket:', error);
+                    document.getElementById('connection-info').textContent = 'Erreur de connexion';
+                };
+
+                ws.onclose = () => {
+                    console.log('🔌 Déconnecté');
+                    document.getElementById('status').textContent = 'Déconnecté du serveur';
+                    document.getElementById('connection-info').textContent = '';
+                };
+            } catch (error) {
+                console.error('❌ Impossible de se connecter:', error);
+                alert('Impossible de se connecter au serveur. Vérifiez l\'adresse.');
+            }
+        }
+
+        // Gestion des messages du serveur
+        function handleMessage(message) {
+            console.log('📨 Message reçu:', message);
+
+            if (message.startsWith('CARTE_CENTRALE:')) {
+                const cardText = message.substring('CARTE_CENTRALE:'.length);
+                displayCentralCard(cardText);
+            }
+            else if (message.startsWith('ETAT:')) {
+                const status = message.substring('ETAT:'.length);
+                updateStatus(status);
+            }
+            else if (message.startsWith('MAIN:')) {
+                const cardsData = message.substring('MAIN:'.length);
+                if (cardsData) {
+                    const cards = cardsData.split(',').filter(c => c.trim());
+                    myCards = cards;
+                }
+                displayHand(myCards);
+            }
+            else if (message === 'VOUS_ETES_ROI') {
+                console.log('👑 Je suis le roi !');
+                isKing = true;
+            }
+            else if (message.startsWith('ROI:')) {
+                const kingName = message.split(':')[1];
+                isKing = (kingName === playerName);
+                console.log('👑 Le roi est:', kingName, '(moi:', isKing, ')');
+            }
+            else if (message.startsWith('RESULTAT:')) {
+                const cardsData = message.substring('RESULTAT:'.length);
+                if (cardsData) {
+                    const cards = cardsData.split(',').filter(c => c.trim());
+                    displayPlayedCards(cards, isKing);
+                }
+            }
+            else if (message === 'CHOISIR') {
+                console.log('🤔 À moi de choisir le gagnant');
+            }
+            else if (message === 'RETIRER_CARTES_JOUEES') {
+                clearPlayedCards();
+            }
+            else if (message === 'DEBUT_PARTIE') {
+                updateStatus('🎮 La partie commence !');
+            }
+        }
+
+
+		// Afficher la carte centrale
+		// Afficher la carte centrale
+		function displayCentralCard(cardPath) {
+		    // ✅ Remplacer les backslash par des slash
+		    cardPath = cardPath.replace(/\\/g, '/');
+		    
+		    // ✅ Extraire juste "img_noires/390.png" depuis "src/main/resources/img_noires/390.png"
+		    const parts = cardPath.split('/');
+		    const fileName = parts[parts.length - 1];  // "390.png"
+		    const folderName = parts[parts.length - 2]; // "img_noires" ou "img_blanches"
+		    
+		    // ✅ Construire le chemin web local : resources/img_noires/390.png
+		    const webPath = 'resources/' + folderName + '/' + fileName;
+		    
+		    const centralCard = document.getElementById('centralCard');
+		    centralCard.innerHTML = ""; // On vide le contenu précédent
+
+		    const img = document.createElement("img");
+		    img.src = webPath;              // ✅ Utiliser le chemin web
+		    img.alt = "Carte centrale";
+		    img.style.width = "150px";
+		    img.style.height = "auto";
+		    img.style.borderRadius = "10px";
+		    img.style.boxShadow = "0 4px 10px rgba(0,0,0,0.3)";
+
+		    centralCard.appendChild(img);
+		    
+		    console.log('🎴 Carte centrale:', webPath);
+		}
+
+        // Mettre à jour le statut
+        function updateStatus(status) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = status;
+            
+            if (isKing) {
+                if (!statusEl.querySelector('.crown-badge')) {
+                    const badge = document.createElement('span');
+                    badge.className = 'crown-badge';
+                    badge.textContent = '👑 ROI';
+                    statusEl.appendChild(badge);
+                }
+            } else {
+                const badge = statusEl.querySelector('.crown-badge');
+                if (badge) badge.remove();
+            }
+        }
+
+        // Afficher la main du joueur
+        function displayHand(cards) {
+            const handEl = document.getElementById('handCards');
+            handEl.innerHTML = '';
+
+            if (!cards || cards.length === 0) {
+                handEl.innerHTML = '<p style="text-align: center; width: 100%;">Aucune carte</p>';
+                return;
+            }
+
+            cards.forEach(cardPath => {
+                const card = createCard(cardPath, false);
+                
+                if (!hasPlayed && !isKing) {
+                    card.classList.add('clickable');
+                    card.onclick = () => playCard(cardPath);
+                } else {
+                    card.classList.add('disabled');
+                }
+
+                handEl.appendChild(card);
+            });
+        }
+
+        // Afficher les cartes jouées
+        function displayPlayedCards(cards, clickable) {
+            const playedEl = document.getElementById('playedCards');
+            playedEl.innerHTML = '';
+
+            cards.forEach(cardData => {
+                const cardPath = cardData.split('#')[0];
+                const card = createCard(cardPath, false);
+
+                if (clickable) {
+                    card.classList.add('clickable');
+                    card.onclick = () => chooseWinner(cardData);
+                }
+
+                playedEl.appendChild(card);
+            });
+        }
+
+        // Créer un élément carte
+		function createCard(cardPath, isBlack = false) {
+		    // ✅ Remplacer les backslash
+		    cardPath = cardPath.replace(/\\/g, '/');
+		    
+		    // ✅ Extraire le dossier et le nom du fichier
+		    const parts = cardPath.split('/');
+		    const fileName = parts[parts.length - 1];
+		    const folderName = parts[parts.length - 2];
+		    
+		    // ✅ Construire le chemin web local : resources/img_blanches/123.png
+		    const webPath = 'resources/' + folderName + '/' + fileName;
+		    
+		    const card = document.createElement('div');
+		    card.className = 'card';
+		    if (isBlack) card.classList.add('black');
+
+		    // ✅ Créer l'image
+		    const img = document.createElement('img');
+		    img.src = webPath;
+		    img.style.width = '100%';
+		    img.style.height = '100%';
+		    img.style.objectFit = 'contain';
+		    img.style.borderRadius = '8px';
+		    
+		    // Fallback si l'image ne charge pas
+		    img.onerror = function() {
+		        card.textContent = fileName.replace('.png', '').replace('.jpg', '');
+		    };
+		    
+		    card.appendChild(img);
+		    return card;
+		}
+
+        // Jouer une carte
+        function playCard(cardPath) {
+            if (hasPlayed) return;
+
+            console.log('🎯 Carte jouée:', cardPath);
+            ws.send('JOUER_CARTE:' + cardPath);
+            hasPlayed = true;
+
+            // Désactiver toutes les cartes
+            document.querySelectorAll('#handCards .card').forEach(card => {
+                card.classList.remove('clickable');
+                card.classList.add('disabled');
+                card.onclick = null;
+            });
+
+            updateStatus('✅ Carte jouée ! Attente des autres joueurs...');
+        }
+
+        // Choisir le gagnant (roi uniquement)
+        function chooseWinner(cardData) {
+            if (!isKing) return;
+
+            console.log('🏆 Gagnant choisi:', cardData);
+            ws.send('CHOISIR_GAGNANT:' + cardData);
+
+            // Désactiver toutes les cartes jouées
+            document.querySelectorAll('#playedCards .card').forEach(card => {
+                card.classList.remove('clickable');
+                card.onclick = null;
+            });
+
+            updateStatus('✅ Vous avez choisi le gagnant !');
+        }
+
+        // Effacer les cartes jouées
+        function clearPlayedCards() {
+            document.getElementById('playedCards').innerHTML = '';
+            hasPlayed = false;
+        }
+    </script>
+</body>
+</html>
