@@ -1,12 +1,12 @@
 package controleur;
 
-import modele.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.Collectors;
-import serveur.ServeurWebSocket;
+import java.util.ArrayList;
+import java.util.Random;
 
 import app.Partie;
+import modele.Carte;
+import modele.Joueur;
+import serveur.ServeurWebSocket;
 
 public class ControleurServeur {
     private Partie partie;
@@ -66,7 +66,7 @@ public class ControleurServeur {
     private void commencerTour() throws InterruptedException {
     	//partie.setRoi(partie.getJoueurParNom("serveur"));
         Joueur roi = partie.getRoi();
-        System.out.println("Tour "+partie.getTour());
+        System.out.println("NOUVEAU TOUR : Tour "+partie.getTour());
         
         if (roi == null) {//Rentre si premier tour
         	
@@ -79,7 +79,13 @@ public class ControleurServeur {
     		partie.setRoi(roi);
 
         }
-        
+            // ✅ IMPORTANT : Réinitialiser tous les statuts
+        for(Joueur j : partie.getJoueurs()) {
+            j.setRoi(false);  // Tout le monde perd le statut
+            j.setAJoue(false);
+        }
+        roi.setRoi(true);
+            
         
         // 🃏 Carte centrales
         Carte carteCentrale = partie.getCartesNoires().popCarte();
@@ -94,19 +100,20 @@ public class ControleurServeur {
 
 
         
+        // ✅ Envoyer la main à TOUT LE MONDE (même le roi, pour qu'il voie ses cartes mises à jour)
         for(Joueur j : partie.getJoueurs()) {
-        	j.setAJoue(false);
-        	//serveur.envoyer(j.getNom(), "MAIN:");
-        	if(j.equals(roi)) {
-        		serveur.envoyer(roi.getNom(),"VOUS_ETES_ROI");
-        		
-        		serveur.envoyer(roi.getNom(), "ETAT:Vous êtes roi ! Attente des joueurs... isRoi ?" + j.isRoi());
-        	}
-        	else {
-        		serveur.envoyer(j.getNom(), "ETAT:A votre tour de jouer ! isRoi ?" + j.isRoi());
-        		envoyerMainJoueur(j.getNom());
-        	}
-        	
+            envoyerMainJoueur(j.getNom());
+        }
+
+        // Puis envoyer les statuts
+        for(Joueur j : partie.getJoueurs()) {
+            if(j.isRoi()) {
+                serveur.envoyer(j.getNom(),"VOUS_ETES_ROI");
+                serveur.envoyer(j.getNom(), "ETAT:Vous êtes roi ! Attente des joueurs... isRoi ?" + j.isRoi());
+            }
+            else {
+                serveur.envoyer(j.getNom(), "ETAT:A votre tour de jouer ! isRoi ?" + j.isRoi());
+            }
         }
         serveur.broadcast("ROI:"+roi.getNom());
 
@@ -255,9 +262,10 @@ public class ControleurServeur {
         	String nomCarte = action.split(":",2)[1];
             Joueur joueur = partie.getJoueurParNom(joueurNom);
             String nomCarteSansJoueur = nomCarte.split("#")[0];
+            String carteAvecNom = nomCarte + "#" + joueurNom;  // ← Important !
 
                 joueur.setAJoue(true);
-                partie.ajouterCarteBlanche(nomCarte);
+                partie.ajouterCarteBlanche(carteAvecNom);
                 joueur.getCartes().remove(nomCarteSansJoueur);
                 
                 // Piocher une nouvelle carte

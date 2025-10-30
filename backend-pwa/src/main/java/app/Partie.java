@@ -2,9 +2,7 @@ package app;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Random;
 
-import modele.Carte;
 import modele.Joueur;
 import modele.Paquet;
 
@@ -30,6 +28,7 @@ public class Partie {
 		
 		
 		//Chaque joueur se voit attribuer 8 cartes blanches
+		/* A NE PAS FAIRE ICI
 		for(int i=0;i<nbJoueurs;i++) {
 			Joueur j = new Joueur("Joueur "+i);
 			for(int k = 0; k<8 ;k++) {
@@ -37,7 +36,7 @@ public class Partie {
 			}
 			//On ajoute le joueur avec ses cartes dans la partie
 			this.joueurs.add(j);
-		}
+		}*/
 
 		
 	}

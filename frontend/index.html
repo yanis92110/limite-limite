@@ -85,6 +85,53 @@
         .connection-panel button:hover {
             transform: scale(1.05);
         }
+        /* Box infos joueur en haut à droite */
+        .player-info {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            min-width: 150px;
+        }
+
+        .player-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #fff;
+            text-align: center;
+        }
+
+        .player-stats {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            font-size: 14px;
+        }
+
+        .player-stats span {
+            padding: 5px 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        #playerRole.king {
+            background: gold;
+            color: black;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .player-info {
+                position: static;
+                margin: 10px auto;
+                max-width: 300px;
+            }
+        }
 
         /* Container principal */
         .game-container {
@@ -263,6 +310,14 @@
     <div class="header">
         <div class="status" id="status">En attente de connexion...</div>
         <div class="connection-info" id="connection-info"></div>
+        <!-- ✅ AJOUT : Box infos joueur -->
+        <div class="player-info" id="playerInfo">
+            <div class="player-name" id="playerNameDisplay">--</div>
+            <div class="player-stats">
+                <span id="playerRole">Joueur</span>
+                <span id="playerScore">Score: 0</span>
+            </div>
+        </div>
     </div>
 
     <!-- Panneau de connexion -->
@@ -301,6 +356,7 @@
         let isKing = false;
         let hasPlayed = false;
         let myCards = [];
+        let playerScore = 0;  // ✅ AJOUT
 
         // Connexion au serveur
         function connect() {
@@ -323,6 +379,8 @@
                     document.getElementById('connectionPanel').style.display = 'none';
                     document.getElementById('gameContainer').classList.add('active');
                     document.getElementById('connection-info').textContent = 'Connecté en tant que ' + playerName;
+                    // ✅ AJOUT : Afficher les infos du joueur
+                    updatePlayerInfo();
                 };
 
                 ws.onmessage = (event) => {
@@ -342,6 +400,20 @@
             } catch (error) {
                 console.error('❌ Impossible de se connecter:', error);
                 alert('Impossible de se connecter au serveur. Vérifiez l\'adresse.');
+            }
+        }
+        // ✅ AJOUT : Fonction pour mettre à jour les infos du joueur
+        function updatePlayerInfo() {
+            document.getElementById('playerNameDisplay').textContent = playerName;
+            document.getElementById('playerScore').textContent = 'Score: ' + playerScore;
+            
+            const roleEl = document.getElementById('playerRole');
+            if (isKing) {
+                roleEl.textContent = '👑 ROI';
+                roleEl.classList.add('king');
+            } else {
+                roleEl.textContent = 'Joueur';
+                roleEl.classList.remove('king');
             }
         }
 
@@ -367,12 +439,15 @@
             }
             else if (message === 'VOUS_ETES_ROI') {
                 console.log('👑 Je suis le roi !');
+                
                 isKing = true;
+                updatePlayerInfo();  // ✅ AJOUT
             }
             else if (message.startsWith('ROI:')) {
                 const kingName = message.split(':')[1];
                 isKing = (kingName === playerName);
-                console.log('👑 Le roi est:', kingName, '(moi:', isKing, ')');
+                console.log('👑 Le roi est:', kingName, '(moi ?:', isKing, ')');
+                updatePlayerInfo();  // ✅ AJOUT
             }
             else if (message.startsWith('RESULTAT:')) {
                 const cardsData = message.substring('RESULTAT:'.length);
