@@ -14,6 +14,7 @@ public class Partie {
 	private int nbJoueurs;
 	private int tour = 0;
 	private boolean finJeu = false;
+	private int scoreGagnant = 5; //Score a atteindre pour gagner la partie
 	
 	public Partie(int nbJoueurs) {
 		
@@ -39,6 +40,12 @@ public class Partie {
 		}*/
 
 		
+	}
+	public int getScoreGagnant() {
+		return this.scoreGagnant;
+	}
+	public void setScoreGagnant(int score) {
+		this.scoreGagnant = score;
 	}
 	public int getTour() {
 		return this.tour;
@@ -112,5 +119,6 @@ public class Partie {
 	public void setRoi(Joueur roi) {
 		this.roi = roi;
 	}
+
 	
 }

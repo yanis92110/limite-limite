@@ -1,14 +1,15 @@
 package serveur;
 
-import org.java_websocket.server.WebSocketServer;
-import org.java_websocket.WebSocket;
-import org.java_websocket.handshake.ClientHandshake;
-import controleur.ControleurServeur;
-import modele.Joueur;
-
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.java_websocket.WebSocket;
+import org.java_websocket.handshake.ClientHandshake;
+import org.java_websocket.server.WebSocketServer;
+
+import controleur.ControleurServeur;
+import modele.Joueur;
 
 public class ServeurWebSocket extends WebSocketServer {
     private ControleurServeur controleur;
@@ -48,6 +49,19 @@ public class ServeurWebSocket extends WebSocketServer {
                     conn.send("ERREUR:Pseudo déjà utilisé");
                     return;
                 }
+                if(controleur.getPartie().isFinJeu()) {
+                    conn.send("ERREUR:Partie déjà commencée");
+                    
+                    // Envoyer l'alerte uniquement aux admins
+                    for (Map.Entry<String, WebSocket> entry : clients.entrySet()) {
+                        WebSocket client = entry.getValue();
+                        String playerName = entry.getKey();
+                        if (client.isOpen() && controleur.getPartie().getJoueurParNom(playerName).isAdmin()) {
+                            client.send("ALERTE:Un joueur a tenté de rejoindre une partie en cours.");
+                        }
+                    }
+                    return;
+                }
                 
                 // Ajouter le client
                 clients.put(nomJoueur, conn);
@@ -72,7 +86,41 @@ public class ServeurWebSocket extends WebSocketServer {
                     Thread.sleep(1000);
                     controleur.demarrerBoucleJeu();
                 }
-            } 
+            }
+            else if(message.startsWith("ADMIN:")){
+                String part = message.substring("ADMIN:".length());
+                if(part.startsWith("START_GAME")){
+                    System.out.println("🚀 Démarrage de la partie demandé par l'admin.");
+                    controleur.demarrerBoucleJeu();
+                }
+                else if(part.startsWith("RESET_GAME")){
+                    System.out.println("🔄 Réinitialisation de la partie demandé par l'admin.");
+                    controleur.getPartie().setFinJeu(true);
+                    broadcast("RESET");
+                }
+                else if(part.startsWith("SET_SCORE_GAGNANT:")){
+                    String scoreStr = part.substring("SET_SCORE_GAGNANT:".length()).trim();
+                    try {
+                        int score = Integer.parseInt(scoreStr);
+                        controleur.getPartie().setScoreGagnant(score);
+                        System.out.println("😹 Score gagnant mis à jour à " + score + " par l'admin.");
+                    } catch (NumberFormatException e) {
+                        System.err.println("⚠️ Valeur de score invalide reçue de l'admin: " + scoreStr);
+                    }
+                }
+                else if(part.startsWith("LOGIN:")){
+                    String nomAdmin = part.substring("LOGIN:".length()).trim();
+                    Joueur joueur = controleur.getPartie().getJoueurParNom(nomAdmin);
+                    if(joueur != null) {
+                        joueur.setAdmin(true);
+                        System.out.println("🔑 " + nomAdmin + " est maintenant admin.");
+                        envoyer(nomAdmin, "ETAT:Vous êtes connecté en tant qu'admin.");
+                    } else {
+                        System.err.println("⚠️ Tentative de connexion admin échouée pour " + nomAdmin + " (joueur non trouvé).");
+                        envoyer(nomAdmin, "ERREUR:Échec de la connexion admin (joueur non trouvé).");
+                    }
+                }
+            }
             else {
                 // Trouver le nom du joueur qui a envoyé le message
                 String nomJoueur = clients.entrySet().stream()

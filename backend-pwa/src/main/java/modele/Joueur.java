@@ -8,6 +8,7 @@ public class Joueur {
     private int score = 0;
     private boolean roi = false;
     private boolean aJoue = false; // ✅ pour savoir si le joueur a joué pendant le tour
+    private boolean isAdmin = false;
 
     public Joueur(String nom) {
         this.nom = nom;
@@ -15,6 +16,12 @@ public class Joueur {
 
     public boolean isRoi() {
         return roi;
+    }
+    public boolean isAdmin() {
+        return isAdmin;
+    }
+    public void setAdmin(boolean isAdmin) {
+        this.isAdmin = isAdmin;
     }
 
     public void setRoi(boolean roi) {

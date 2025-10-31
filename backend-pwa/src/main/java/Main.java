@@ -3,7 +3,7 @@ import serveur.ServeurWebSocket;
 public class Main {
     public static void main(String[] args) {
         int port = 8080;
-        int nbJoueurs = 3;
+        int nbJoueurs = 10; // Nombre de joueurs max
         
         System.out.println("===========================================");
         System.out.println("  Aisselle Emeute Caca - Serveur PWA");
