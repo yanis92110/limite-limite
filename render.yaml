@@ -1,0 +1,19 @@
+services:
+  # Backend WebSocket
+  - type: web
+    name: limite-limite-backend
+    env: java
+    buildCommand: mvn clean package
+    startCommand: java -jar target/*.jar
+    envVars:
+      - key: PORT
+        value: 8080
+    plan: free
+
+  # Frontend (optionnel si tu veux séparer)
+  - type: web
+    name: limite-limite-frontend
+    env: static
+    buildCommand: echo "No build needed"
+    staticPublishPath: ./frontend
+    plan: free

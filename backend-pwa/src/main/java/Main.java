@@ -2,7 +2,8 @@ import serveur.ServeurWebSocket;
 
 public class Main {
     public static void main(String[] args) {
-        int port = 8080;
+        String portEnv = System.getenv("PORT");
+        int port = (portEnv != null) ? Integer.parseInt(portEnv) : 8080;
         int nbJoueurs = 10; // Nombre de joueurs max
         
         System.out.println("===========================================");
