@@ -16,7 +16,7 @@ FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
 
 # Copier le jar depuis l'image build
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/target/jeu-cartes-pwa-1.0-jar-with-dependencies.jar app.jar
 
 # Exposer le port
 EXPOSE 8080
