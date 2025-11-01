@@ -12,9 +12,10 @@ import controleur.ControleurServeur;
 import modele.Joueur;
 
 public class ServeurWebSocket extends WebSocketServer {
-    private ControleurServeur controleur;
-    private Map<String, WebSocket> clients;
-    private int nbJoueursAttendu;
+    private final ControleurServeur controleur;
+    private final Map<String, WebSocket> clients;
+    @SuppressWarnings("FieldMayBeFinal")
+    private int nbJoueursAttendu; //Pas final au cas ou on ajoute le bouton plus tard la
     
     public ServeurWebSocket(int port, int nbJoueurs) {
         super(new InetSocketAddress(port));
@@ -37,6 +38,7 @@ public class ServeurWebSocket extends WebSocketServer {
     }
     
     @Override
+    @SuppressWarnings("UseSpecificCatch")
     public void onMessage(WebSocket conn, String message) {
         System.out.println("📨 Message reçu: " + message);
         
@@ -71,9 +73,9 @@ public class ServeurWebSocket extends WebSocketServer {
                 Joueur joueur = new Joueur(nomJoueur);
                 controleur.getPartie().ajouterJoueur(joueur);
                 
-                // Initialiser la main du joueur avec 10 cartes
+                // Initialiser la main du joueur avec 8 cartes
                 for (int i = 0; i < 8; i++) {
-                    joueur.ajouterCarte(controleur.getPartie().getCartesBlanches().popCarte().getNom());
+                    joueur.ajouterCarte(controleur.getPartie().getCartesBlanches().popCarte());
                 }
                 
                 // Notifier tous les joueurs
@@ -140,7 +142,6 @@ public class ServeurWebSocket extends WebSocketServer {
             }
         } catch (Exception e) {
             System.err.println("❌ Erreur lors du traitement: " + e.getMessage());
-            e.printStackTrace();
         }
     }
     
@@ -164,9 +165,8 @@ public class ServeurWebSocket extends WebSocketServer {
     @Override
     public void onError(WebSocket conn, Exception ex) {
         System.err.println("❌ Erreur WebSocket: " + ex.getMessage());
-        ex.printStackTrace();
     }
-    
+    @Override
     // Méthode pour envoyer à tous les clients
     public void broadcast(String message) {
         System.out.println("📢 Broadcast: " + message);

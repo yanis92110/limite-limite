@@ -1,6 +1,7 @@
 import serveur.ServeurWebSocket;
 
 public class Main {
+    @SuppressWarnings("CallToPrintStackTrace")
     public static void main(String[] args) {
         String portEnv = System.getenv("PORT");
         int port = (portEnv != null) ? Integer.parseInt(portEnv) : 8080;

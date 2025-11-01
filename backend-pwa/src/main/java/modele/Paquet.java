@@ -5,9 +5,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class Paquet {
-    private ArrayList<Carte> cartes;
+    private ArrayList<String> cartes;
     private int couleur = -1;
     
+    @SuppressWarnings("OverridableMethodCallInConstructor")
     public Paquet(int couleur) {
         this.cartes = new ArrayList<>();
         this.couleur = couleur;
@@ -38,26 +39,28 @@ public class Paquet {
         if (liste != null) {
             for (File f : liste) {
                 if (f.getName().endsWith(".png")) {
-                    cartes.add(new Carte(couleur, dir + "\\" + f.getName()));
+                    cartes.add(dir + "\\" + f.getName());
                 }
             }
         }
         
         Collections.shuffle(cartes);
     }
-    
-    public Carte popCarte() {
+    /**
+     * Renvoie directement le chemin de la carte
+     */
+    public String popCarte() {
         if (this.cartes.isEmpty()) {
             this.remplir();
         }
         return this.cartes.removeLast();
     }
     
-    public ArrayList<Carte> getCartes() {
+    public ArrayList<String> getCartes() {
         return cartes;
     }
     
-    public void setCartes(ArrayList<Carte> cartes) {
+    public void setCartes(ArrayList<String> cartes) {
         this.cartes = cartes;
     }
     

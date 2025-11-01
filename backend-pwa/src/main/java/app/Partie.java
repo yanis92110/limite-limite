@@ -11,7 +11,8 @@ public class Partie {
 	private ArrayList<Joueur> joueurs;
 	private ArrayList<String> cartesBlanchesActuelles;
 	private Joueur roi = null;
-	private int nbJoueurs;
+        @SuppressWarnings("FieldMayBeFinal")
+	private int nbJoueurs; // Pas final pour ajouter le bouton nb joueurs plus tard
 	private int tour = 0;
 	private boolean finJeu = false;
 	private int scoreGagnant = 5; //Score a atteindre pour gagner la partie
@@ -21,8 +22,8 @@ public class Partie {
 
 		//boolean value = randomNumbers.nextBoolean();
 		
-		this.joueurs = new ArrayList<Joueur>();
-		this.cartesBlanchesActuelles = new ArrayList<String>();
+		this.joueurs = new ArrayList<>();
+		this.cartesBlanchesActuelles = new ArrayList<>();
 		this.cartesBlanches = new Paquet(0);
 		this.cartesNoires = new Paquet(1);
 		this.nbJoueurs = nbJoueurs;

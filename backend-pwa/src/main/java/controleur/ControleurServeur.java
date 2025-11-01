@@ -5,13 +5,12 @@ import java.util.Random;
 
 import app.Partie;
 import exceptions.ResetPartieException;
-import modele.Carte;
 import modele.Joueur;
 import serveur.ServeurWebSocket;
-
+@SuppressWarnings("CallToPrintStackTrace")
 public class ControleurServeur {
     private Partie partie;
-    private ServeurWebSocket serveur;
+    private final ServeurWebSocket serveur;
     private volatile boolean partieReinitialisee = false;
 
     
@@ -81,12 +80,6 @@ public class ControleurServeur {
     }
     serveur.broadcast("RESET");
     }
-    private void envoyerMainsAuxJoueurs() {
-    	//Les cartes envoyées sont cliquables
-        for (Joueur j : partie.getJoueurs()) {
-        	envoyerMainJoueur(j.getNom());
-        }
-    }
     private void envoyerMainJoueur(String nomJoueur) {
     	Joueur j = partie.getJoueurParNom(nomJoueur);
     	StringBuilder sb = new StringBuilder("MAIN:");
@@ -143,8 +136,8 @@ public class ControleurServeur {
                 
 
             // 🃏 Carte centrales
-            Carte carteCentrale = partie.getCartesNoires().popCarte();
-            serveur.broadcast("CARTE_CENTRALE:" + carteCentrale.getNom());
+            String carteCentrale = partie.getCartesNoires().popCarte();
+            serveur.broadcast("CARTE_CENTRALE:" + carteCentrale);
             //Envoie des status
             if (partieReinitialisee) throw new ResetPartieException();
             for(Joueur j : partie.getJoueurs()) {
@@ -193,7 +186,7 @@ public class ControleurServeur {
                             throw e; // remonte pour stopper la boucle
                     }
                 
-                catch (Exception e) {
+                catch (InterruptedException e) {
                     e.printStackTrace();
                     serveur.broadcast("ERREUR:Une erreur est survenue pendant le tour.");
                 }
@@ -267,7 +260,9 @@ public class ControleurServeur {
         serveur.envoyer(partie.getRoi().getNom(),"CHOISIR");
         int timeout = 0;
         if (partieReinitialisee) throw new ResetPartieException();
+        
         while(!partie.getRoi().aJoue() && timeout <600) {
+            
             Thread.sleep(100);
             timeout++;
             if (partieReinitialisee) throw new ResetPartieException();
@@ -286,6 +281,7 @@ public class ControleurServeur {
                 
                 // On attend le format "nomCarte#nomJoueur"
                 String[] parts = carteChoisie.split("#", 2);
+                @SuppressWarnings("unused")
                 String nomCarte = parts.length > 0 ? parts[0] : carteChoisie;
                 String nomJoueurGagnant = parts.length > 1 ? parts[1] : null;
                 
@@ -343,16 +339,15 @@ public class ControleurServeur {
                 joueur.getCartes().remove(nomCarteSansJoueur);
                 
                 // Piocher une nouvelle carte
-                joueur.ajouterCarte(partie.getCartesBlanches().popCarte().getNom());
+                joueur.ajouterCarte(partie.getCartesBlanches().popCarte());
                 
                 System.out.println("✅ " + joueurNom + " a joué sa carte");
             
         }
         else if (action.startsWith("CHOISIR_GAGNANT:")) {
-        	
-            String nomCarte = action.substring("RESULTAT:".length());
-        	nomCarte = action.split("#")[0];
-        	String nomJoueurGagnant = action.split("#")[1];
+            @SuppressWarnings("unused")
+            String nomCarte = action.split("#")[0];
+            String nomJoueurGagnant = action.split("#")[1];
         	
             System.out.println("GAGNANT : "+nomJoueurGagnant);
             serveur.broadcast("CARTE_GAGNANTE:"+nomCarte);
