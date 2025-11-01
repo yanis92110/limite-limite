@@ -1,7 +1,7 @@
 import serveur.ServeurWebSocket;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args){
         // Récupérer le port fourni par Render
         String portEnv = System.getenv("PORT");
         int port = (portEnv != null) ? Integer.parseInt(portEnv) : 10000;

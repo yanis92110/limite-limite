@@ -658,7 +658,7 @@
             document.getElementById('connection-info').textContent = 'Connexion en cours...';
 
             try {
-                ws = new WebSocket(serverUrl);
+                ws = new WebSocket("wss://limite-limite-production.up.railway.app");
 
                 ws.onopen = () => {
                     console.log('✅ Connecté au serveur');
