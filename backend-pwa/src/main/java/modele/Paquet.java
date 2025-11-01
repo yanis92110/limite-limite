@@ -1,8 +1,8 @@
 package modele;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.io.*;
 
 public class Paquet {
     private ArrayList<Carte> cartes;
@@ -44,7 +44,6 @@ public class Paquet {
         }
         
         Collections.shuffle(cartes);
-        //System.out.println("Paquet rempli : " + cartes.size() + " cartes (couleur " + couleur + ")");
     }
     
     public Carte popCarte() {

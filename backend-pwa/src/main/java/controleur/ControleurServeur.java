@@ -70,7 +70,6 @@ public class ControleurServeur {
             	
         }
     }
-    Thread.sleep(700); // Pause avant de recommencer un tour
     serveur.broadcast("RESET");
     }
     private void envoyerMainsAuxJoueurs() {
@@ -107,7 +106,6 @@ public class ControleurServeur {
                 return;
         	}
         }
-    	//partie.setRoi(partie.getJoueurParNom("serveur"));
         serveur.broadcast("NOUVEAU_TOUR:"+partie.getTour());
         Joueur roi = partie.getRoi();
         System.out.println("NOUVEAU TOUR : Tour "+partie.getTour());
@@ -134,14 +132,7 @@ public class ControleurServeur {
         // 🃏 Carte centrales
         Carte carteCentrale = partie.getCartesNoires().popCarte();
         serveur.broadcast("CARTE_CENTRALE:" + carteCentrale.getNom());
-        
-        //envoyerMainsAuxJoueurs();
-        
-        //Attention les cartes sont cliquables
-        
-        //Envoie de l'etat ROI au roi
-        
-                // Puis envoyer les statuts
+        //Envoie des status
         for(Joueur j : partie.getJoueurs()) {
             if(j.isRoi()) {
                 serveur.envoyer(j.getNom(),"VOUS_ETES_ROI");
@@ -183,7 +174,7 @@ public class ControleurServeur {
         traiterCartesBlanches();
 
         partie.addTour();
-        Thread.sleep(3000); // Pause entre les tours
+        Thread.sleep(6000); // Pause entre les tours
     }
     
     private void attendreReponses() throws InterruptedException {
@@ -284,13 +275,11 @@ public class ControleurServeur {
             System.out.println("✅ Le roi a choisi un gagnant.");
         }
         
-        // TODO : Déterminer le gagnant du tour (si besoin d'autres règles)
         
         Thread.sleep(200);
         
         partie.viderCartesBlanches();
         serveur.broadcast("RETIRER_CARTES_JOUEES");
-        Thread.sleep(100);
     }
     
     private void changerRoi(String nomJoueur) {
