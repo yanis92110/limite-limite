@@ -1,10 +1,12 @@
 package modele;
 
-import java.io.File;
-import java.net.URL;
-import java.io.InputStream;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 public class Paquet {
     private ArrayList<String> cartes;
@@ -21,36 +23,34 @@ public class Paquet {
         return this.cartes.isEmpty();
     }
     
+
+    @SuppressWarnings({"ConvertToTryWithResources", "CallToPrintStackTrace"})
     public void remplir() {
-        String path = (couleur == 0) ? "/img_blanches" : "/img_noires";
+        @SuppressWarnings("unused")
+        String path = (couleur == 0) ? "img_blanches" : "img_noires";
+        cartes.clear();
 
         try {
-            // Récupère les ressources dans le classpath
-            InputStream is = getClass().getResourceAsStream(path);
-            if (is == null) {
-                System.err.println("Erreur : dossier introuvable dans le classpath : " + path);
-                return;
-            }
+            // Récupérer le chemin du JAR
+            String jarPath = getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
+            JarFile jar = new JarFile(jarPath);
 
-            // Pour lister les fichiers dans un JAR, il faut utiliser ClassLoader + getResources
-            var url = getClass().getResource(path);
-            if (url == null) {
-                System.err.println("Erreur : URL introuvable pour " + path);
-                return;
-            }
-
-            File folder = new File(url.toURI());
-            File[] liste = folder.listFiles();
-            if (liste != null) {
-                for (File f : liste) {
-                    if (f.getName().endsWith(".png")) {
-                        cartes.add(path + "/" + f.getName());
-                    }
+            Enumeration<JarEntry> entries;
+            entries = jar.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                String name = entry.getName();
+                if (name.startsWith("img_blanches/") && couleur == 0 && name.endsWith(".png")) {
+                    cartes.add("/" + name);
+                } else if (name.startsWith("img_noires/") && couleur == 1 && name.endsWith(".png")) {
+                    cartes.add("/" + name);
                 }
             }
-        } catch (Exception e) {
+            jar.close();
+        } catch (IOException | URISyntaxException e) {
             e.printStackTrace();
         }
+
         Collections.shuffle(this.cartes);
     }
 
