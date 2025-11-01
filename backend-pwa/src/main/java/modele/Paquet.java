@@ -53,8 +53,10 @@ public class Paquet {
         if (this.cartes.isEmpty()) {
             this.remplir();
         }
-        return this.cartes.removeLast();
+        // Supprime et renvoie la dernière carte
+        return this.cartes.remove(this.cartes.size() - 1);
     }
+
     
     public ArrayList<String> getCartes() {
         return cartes;
