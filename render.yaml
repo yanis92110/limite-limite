@@ -2,13 +2,13 @@ services:
   # Backend WebSocket
   - type: web
     name: limite-limite-backend
-    env: java
-    buildCommand: mvn clean package
-    startCommand: java -jar target/jeu-cartes-pwa-1.0-jar-with-dependencies.jar
+    env: docker
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: PORT
         value: 8080
     plan: free
+
 
   # Frontend (optionnel si tu veux séparer)
   - type: web
