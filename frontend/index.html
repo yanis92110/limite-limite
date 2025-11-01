@@ -639,7 +639,7 @@
 
         function connect() {
             const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-            const backendUrl = isLocal ? 'ws://localhost:8080' : 'wss://limite-limite-backend.onrender.com';
+            const backendUrl = isLocal ? 'ws://localhost:8080' : 'wss://limite-limite-backend.onrender.com/';
             document.getElementById('serverUrl').value = backendUrl;
 
             playerName = document.getElementById('playerName').value;

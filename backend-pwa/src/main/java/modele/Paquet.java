@@ -1,6 +1,8 @@
 package modele;
 
 import java.io.File;
+import java.net.URL;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -20,32 +22,38 @@ public class Paquet {
     }
     
     public void remplir() {
-        File dir;
-        if (couleur == 0) {
-            // Cartes blanches - chemin relatif
-            dir = new File("src/main/resources/img_blanches/");
-        } else {
-            // Cartes noires - chemin relatif
-            dir = new File("src/main/resources/img_noires/");
-        }
-        
-        if (!dir.exists()) {
-            System.err.println("Erreur : dossier introuvable : " + dir.getAbsolutePath());
-            return;
-        }
-        
-        File[] liste = dir.listFiles();
-        
-        if (liste != null) {
-            for (File f : liste) {
-                if (f.getName().endsWith(".png")) {
-                    cartes.add(dir + "\\" + f.getName());
+        String path = (couleur == 0) ? "/img_blanches" : "/img_noires";
+
+        try {
+            // Récupère les ressources dans le classpath
+            InputStream is = getClass().getResourceAsStream(path);
+            if (is == null) {
+                System.err.println("Erreur : dossier introuvable dans le classpath : " + path);
+                return;
+            }
+
+            // Pour lister les fichiers dans un JAR, il faut utiliser ClassLoader + getResources
+            var url = getClass().getResource(path);
+            if (url == null) {
+                System.err.println("Erreur : URL introuvable pour " + path);
+                return;
+            }
+
+            File folder = new File(url.toURI());
+            File[] liste = folder.listFiles();
+            if (liste != null) {
+                for (File f : liste) {
+                    if (f.getName().endsWith(".png")) {
+                        cartes.add(path + "/" + f.getName());
+                    }
                 }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        
-        Collections.shuffle(cartes);
+        Collections.shuffle(this.cartes);
     }
+
     /**
      * Renvoie directement le chemin de la carte
      */
