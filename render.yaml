@@ -3,8 +3,8 @@ services:
   - type: web
     name: limite-limite-backend
     env: docker
-    dockerfilePath: ./backend-pwa/Dockerfile
-    context: ./backend-pwa
+    dockerfilePath: ./Dockerfile  # À la racine
+    context: .  # Contexte à la racine (important !)
     envVars:
       - key: PORT
         value: 8080

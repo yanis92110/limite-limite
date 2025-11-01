@@ -3,9 +3,9 @@ FROM maven:3.9.2-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
-# Copier les fichiers Maven et le code source
-COPY pom.xml .
-COPY src ./src
+# Copier les fichiers Maven et le code source depuis backend-pwa
+COPY backend-pwa/pom.xml .
+COPY backend-pwa/src ./src
 
 # Compiler le projet
 RUN mvn clean package -DskipTests
