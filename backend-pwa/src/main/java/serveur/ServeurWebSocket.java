@@ -72,7 +72,7 @@ public class ServeurWebSocket extends WebSocketServer {
                 controleur.getPartie().ajouterJoueur(joueur);
                 
                 // Initialiser la main du joueur avec 10 cartes
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; i < 8; i++) {
                     joueur.ajouterCarte(controleur.getPartie().getCartesBlanches().popCarte().getNom());
                 }
                 

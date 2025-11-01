@@ -2,7 +2,7 @@ package controleur;
 
 import java.util.ArrayList;
 import java.util.Random;
-
+import exceptions.ResetPartieException;
 import app.Partie;
 import modele.Carte;
 import modele.Joueur;
@@ -11,7 +11,8 @@ import serveur.ServeurWebSocket;
 public class ControleurServeur {
     private Partie partie;
     private ServeurWebSocket serveur;
-    private boolean partieEnCours = false;
+    private volatile boolean partieReinitialisee = false;
+
     
     public ControleurServeur(ServeurWebSocket serveur, int nbJoueurs) {
         this.serveur = serveur;
@@ -26,21 +27,27 @@ public class ControleurServeur {
     public Partie getPartie() {
         return partie;
     }
-    public boolean isPartieEnCours() {
-        return partieEnCours;
+    public boolean ispartieReinitialisee() {
+        return partieReinitialisee;
     }
-    public void setPartieEnCours(boolean b) {
-        this.partieEnCours = b;
+    public void setpartieReinitialisee(boolean b) {
+        this.partieReinitialisee = b;
     }
     
     // ✅ À appeler explicitement depuis Serveur.lancerPartie()
     public void demarrerBoucleJeu() {
-        partieEnCours = true;
+        if (this.partie.getJoueurs().size() < 3) {
+            serveur.broadcast("ALERTE:Nombre de joueurs insuffisant pour démarrer la partie.");
+            return;
+        }
+        partieReinitialisee = true;
         new Thread(() -> {
             try {
                 bouclePartie();
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                partieReinitialisee = false;
+                serveur.broadcast("ERREUR:La partie a été interrompue de manière inattendue.");
             }
         }).start();
     }
@@ -48,14 +55,14 @@ public class ControleurServeur {
     private void bouclePartie() throws InterruptedException {
         System.out.println("🎮 Début de la boucle de jeu");
         
-        while (partieEnCours) {
+        while (partieReinitialisee) {
             try {
                 commencerTour();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             if(partie.isFinJeu()) {
-            	partieEnCours = false;
+            	partieReinitialisee = false;
                 System.out.println("🏆 La partie est terminée !");
                 Joueur gagnant = null;
                 int scoreMax = -1;
@@ -95,114 +102,131 @@ public class ControleurServeur {
     
 
     
-    private void commencerTour() throws InterruptedException {
-        if(!partieEnCours){
-            serveur.broadcast("RESET");
-            return;
+    private void commencerTour() throws InterruptedException,ResetPartieException {
+        if (partie == null || partieReinitialisee) {
+            throw new ResetPartieException();
         }
-        for(Joueur j : partie.getJoueurs()) {
-        	if(j.getScore()>=partie.getScoreGagnant()) {
-        		partie.setFinJeu(true);
-                return;
-        	}
-        }
-        serveur.broadcast("NOUVEAU_TOUR:"+partie.getTour());
-        Joueur roi = partie.getRoi();
-        System.out.println("NOUVEAU TOUR : Tour "+partie.getTour());
-        
-        if (roi == null) {//Rentre si premier tour
-        	
-    		//Choix aléatoire du roi
-        	
-    		Random randomNumbers = new Random();
-    		var value = randomNumbers.nextInt(this.partie.getJoueurs().size());
-    		
-    		roi = this.getPartie().getJoueurs().get(value);
-    		partie.setRoi(roi);
-
-        }
-            // ✅ IMPORTANT : Réinitialiser tous les statuts
-        for(Joueur j : partie.getJoueurs()) {
-            j.setRoi(false);  // Tout le monde perd le statut
-            j.setAJoue(false);
-        }
-        roi.setRoi(true);
+            try {
+                
+            if (partieReinitialisee) throw new ResetPartieException();
+            for(Joueur j : partie.getJoueurs()) {
+                if(j.getScore()>=partie.getScoreGagnant()) {
+                    partie.setFinJeu(true);
+                    return;
+                }
+            }
             
+            serveur.broadcast("NOUVEAU_TOUR:"+partie.getTour());
+            Joueur roi = partie.getRoi();
+            System.out.println("NOUVEAU TOUR : Tour "+partie.getTour());
+            
+            if (roi == null) {//Rentre si premier tour
+                
+                //Choix aléatoire du roi
+                
+                Random randomNumbers = new Random();
+                var value = randomNumbers.nextInt(this.partie.getJoueurs().size());
+                
+                roi = this.getPartie().getJoueurs().get(value);
+                partie.setRoi(roi);
 
-        // 🃏 Carte centrales
-        Carte carteCentrale = partie.getCartesNoires().popCarte();
-        serveur.broadcast("CARTE_CENTRALE:" + carteCentrale.getNom());
-        //Envoie des status
-        for(Joueur j : partie.getJoueurs()) {
-            if(j.isRoi()) {
-                serveur.envoyer(j.getNom(),"VOUS_ETES_ROI");
-                serveur.envoyer(j.getNom(), "ETAT:Vous êtes roi ! Attente des joueurs...");
             }
-            else {
-                serveur.envoyer(j.getNom(), "ETAT:A votre tour de jouer !");
+                // ✅ IMPORTANT : Réinitialiser tous les statuts
+            if (partieReinitialisee) throw new ResetPartieException();
+            for(Joueur j : partie.getJoueurs()) {
+                j.setRoi(false);  // Tout le monde perd le statut
+                j.setAJoue(false);
             }
+            roi.setRoi(true);
+                
+
+            // 🃏 Carte centrales
+            Carte carteCentrale = partie.getCartesNoires().popCarte();
+            serveur.broadcast("CARTE_CENTRALE:" + carteCentrale.getNom());
+            //Envoie des status
+            if (partieReinitialisee) throw new ResetPartieException();
+            for(Joueur j : partie.getJoueurs()) {
+                if(j.isRoi()) {
+                    serveur.envoyer(j.getNom(),"VOUS_ETES_ROI");
+                    serveur.envoyer(j.getNom(), "ETAT:Vous êtes roi ! Attente des joueurs...");
+                }
+                else {
+                    serveur.envoyer(j.getNom(), "ETAT:A votre tour de jouer !");
+                }
+            }
+            serveur.broadcast("ROI:"+roi.getNom());
+
+            
+            // ✅ Envoyer la main à TOUT LE MONDE (même le roi, pour qu'il voie ses cartes mises à jour)
+            for(Joueur j : partie.getJoueurs()) {
+                envoyerMainJoueur(j.getNom());
+            }
+
+
+
+
+            
+            System.out.println("⏳ Attente des réponses des joueurs...");
+            if (partieReinitialisee) throw new ResetPartieException();
+            
+            // ⏳ Attendre que tous jouent
+            attendreReponses();
+            
+            for(Joueur j : partie.getJoueurs()) {
+                if(!j.isRoi()) {
+                    serveur.envoyer(j.getNom(), "ETAT:Le roi choisi le vainqueur...");
+                }
+                //Cas roi traiter dans la methode traiterCartesBlanches
+            }
+            
+            // 🎯 Traiter les résultats
+            if (partieReinitialisee) throw new ResetPartieException();
+            traiterCartesBlanches();
+
+            partie.addTour();
+            Thread.sleep(6000); // Pause entre les tours
+            
+                } catch (ResetPartieException e) {
+                            serveur.broadcast("ALERTE:Partie réinitialisée pendant le tour.");
+                            throw e; // remonte pour stopper la boucle
+                    }
+                
+                catch (Exception e) {
+                    e.printStackTrace();
+                    serveur.broadcast("ERREUR:Une erreur est survenue pendant le tour.");
+                }
+                
         }
-        serveur.broadcast("ROI:"+roi.getNom());
-
-        
-        // ✅ Envoyer la main à TOUT LE MONDE (même le roi, pour qu'il voie ses cartes mises à jour)
-        for(Joueur j : partie.getJoueurs()) {
-            envoyerMainJoueur(j.getNom());
-        }
-
-
-
-
-        
-        System.out.println("⏳ Attente des réponses des joueurs...");
-        if(!partieEnCours){
-            serveur.broadcast("RESET");
-            return;
-        }
-        
-        // ⏳ Attendre que tous jouent
-        attendreReponses();
-        
-        for(Joueur j : partie.getJoueurs()) {
-        	if(!j.isRoi()) {
-        		serveur.envoyer(j.getNom(), "ETAT:Le roi choisi le vainqueur...");
-        	}
-        	//Cas roi traiter dans la methode traiterCartesBlanches
-        }
-        
-        // 🎯 Traiter les résultats
-        traiterCartesBlanches();
-
-        partie.addTour();
-        Thread.sleep(6000); // Pause entre les tours
-    }
     
-    private void attendreReponses() throws InterruptedException {
+    
+    private void attendreReponses() throws InterruptedException,ResetPartieException {
+        if (partieReinitialisee) throw new ResetPartieException();
+        try{
         int timeout = 0;
         
         // Compter combien de joueurs doivent jouer
+        
         long nbJoueursAAttendre = partie.getJoueurs().stream()
                 .filter(j -> !j.isRoi())
                 .count();
         
         System.out.println("⏳ Attente de " + nbJoueursAAttendre + " joueur(s)...");
+        if (partieReinitialisee) throw new ResetPartieException();
         
         while (!tousOntJoue() && timeout < 600) { // 60 secondes max
 
             Thread.sleep(100);
             timeout++;
+            if (partieReinitialisee) throw new ResetPartieException();
             
             // Debug tous les 10 coups (1 seconde)
             if (timeout % 10 == 0) {
+                if (partieReinitialisee) throw new ResetPartieException();
                 long nbJoueurs = partie.getJoueurs().stream()
                         .filter(j -> !j.isRoi())
                         .filter(Joueur::aJoue)
                         .count();
                 System.out.println("  ⏱️ " + nbJoueurs + "/" + nbJoueursAAttendre + " ont joué (" + (timeout/10) + "s)");
-                if(!partieEnCours){
-                    serveur.broadcast("RESET");
-                    return;
-                }
             }
         }
         
@@ -210,6 +234,10 @@ public class ControleurServeur {
             System.out.println("⚠️ Timeout atteint !");
         } else {
             System.out.println("✅ Tous les joueurs ont joué !");
+        }
+        } catch (ResetPartieException e) {
+            serveur.broadcast("ALERTE:Partie réinitialisée pendant l'attente des réponses.");
+            throw e; // remonte pour stopper la boucle
         }
     }
     
@@ -236,7 +264,7 @@ public class ControleurServeur {
         while(!partie.getRoi().aJoue() && timeout <600) {
             Thread.sleep(100);
             timeout++;
-            if(!partieEnCours){
+            if(!partieReinitialisee){
                 serveur.broadcast("RESET");
                 return;
             }
@@ -329,7 +357,7 @@ public class ControleurServeur {
         else if (action.startsWith("ADMIN:")) {
         	String commande = action.split(":",2)[1];
         	if(commande.equals("START_GAME")) {
-        		if(!partieEnCours) {
+        		if(!partieReinitialisee) {
         			System.out.println("🚀 Admin -> Démarrage de la partie");
         			demarrerBoucleJeu();
         		} else {
@@ -339,7 +367,7 @@ public class ControleurServeur {
         	}
         	else if(commande.equals("RESET_GAME")) {
         		System.out.println("🔁 Admin -> Réinitialisation de la partie");
-        		partieEnCours = false;
+        		partieReinitialisee = false;
         		
                 int nbJoueurs = partie.getJoueurs().size();
                 nouvellePartie(nbJoueurs);
