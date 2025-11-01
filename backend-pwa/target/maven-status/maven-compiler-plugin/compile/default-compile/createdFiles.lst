@@ -1,6 +1,5 @@
 app\Partie.class
 modele\Joueur.class
-exceptions\IllegalArgumentException.class
 serveur\ServeurWebSocket.class
 exceptions\ResetPartieException.class
 Main.class

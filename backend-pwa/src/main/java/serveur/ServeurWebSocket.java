@@ -95,9 +95,12 @@ public class ServeurWebSocket extends WebSocketServer {
                 }
                 else if(part.startsWith("RESET_GAME")){
                     System.out.println("🔄 Réinitialisation de la partie demandé par l'admin.");
+                    controleur.setpartieReinitialisee(true);
                     controleur.getPartie().setFinJeu(true);
                     controleur.nouvellePartie(nbJoueursAttendu);
-                    controleur.setPartieEnCours(false);
+                    
+                    Thread.sleep(1000);
+                    controleur.setpartieReinitialisee(false);
                     broadcast("RESET");
                 }
                 else if(part.startsWith("SET_SCORE_GAGNANT:")){

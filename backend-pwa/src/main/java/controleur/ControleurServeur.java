@@ -2,8 +2,9 @@ package controleur;
 
 import java.util.ArrayList;
 import java.util.Random;
-import exceptions.ResetPartieException;
+
 import app.Partie;
+import exceptions.ResetPartieException;
 import modele.Carte;
 import modele.Joueur;
 import serveur.ServeurWebSocket;
@@ -40,22 +41,23 @@ public class ControleurServeur {
             serveur.broadcast("ALERTE:Nombre de joueurs insuffisant pour démarrer la partie.");
             return;
         }
-        partieReinitialisee = true;
         new Thread(() -> {
             try {
                 bouclePartie();
             } catch (InterruptedException e) {
                 e.printStackTrace();
-                partieReinitialisee = false;
-                serveur.broadcast("ERREUR:La partie a été interrompue de manière inattendue.");
+                serveur.broadcast("ALERTE:La partie a été interrompue de manière inattendue.");
+            } catch( ResetPartieException e) {
+                e.printStackTrace();
+                serveur.broadcast("ALERTE:La partie a été réinitialisée.");
             }
         }).start();
     }
     
-    private void bouclePartie() throws InterruptedException {
+    private void bouclePartie() throws InterruptedException,ResetPartieException {
         System.out.println("🎮 Début de la boucle de jeu");
         
-        while (partieReinitialisee) {
+        while (!partie.isFinJeu()) {
             try {
                 commencerTour();
             } catch (InterruptedException e) {
@@ -251,7 +253,10 @@ public class ControleurServeur {
     }
 
     
-    private void traiterCartesBlanches() throws InterruptedException{
+    private void traiterCartesBlanches() throws InterruptedException,ResetPartieException{
+        if (partieReinitialisee) throw new ResetPartieException();
+        try{
+        if (partieReinitialisee) throw new ResetPartieException();
         ArrayList<String> cartesJouees = partie.getCartesBlanchesActuelles();
 
         String cartesStr = String.join(",", cartesJouees);
@@ -261,15 +266,14 @@ public class ControleurServeur {
         
         serveur.envoyer(partie.getRoi().getNom(),"CHOISIR");
         int timeout = 0;
+        if (partieReinitialisee) throw new ResetPartieException();
         while(!partie.getRoi().aJoue() && timeout <600) {
             Thread.sleep(100);
             timeout++;
-            if(!partieReinitialisee){
-                serveur.broadcast("RESET");
-                return;
-            }
+            if (partieReinitialisee) throw new ResetPartieException();
         }
         if(timeout>=600) {
+            if (partieReinitialisee) throw new ResetPartieException();
             System.out.println("Time out atteint");
             // Choisir une carte aléatoirement comme gagnante
             if (cartesJouees.isEmpty()) {
@@ -286,6 +290,7 @@ public class ControleurServeur {
                 String nomJoueurGagnant = parts.length > 1 ? parts[1] : null;
                 
                 if (nomJoueurGagnant != null) {
+                    if (partieReinitialisee) throw new ResetPartieException();
                     System.out.println("🏆 Joueur gagnant (aléatoire) : " + nomJoueurGagnant);
                     partie.getJoueurParNom(nomJoueurGagnant).ajouterScore(1);
                     
@@ -302,15 +307,20 @@ public class ControleurServeur {
         } else {
             System.out.println("✅ Le roi a choisi un gagnant.");
         }
-        
+        if (partieReinitialisee) throw new ResetPartieException();
         
         Thread.sleep(200);
         
         partie.viderCartesBlanches();
         serveur.broadcast("RETIRER_CARTES_JOUEES");
+    }    catch (ResetPartieException e) {
+        serveur.broadcast("ALERTE:Partie réinitialisée pendant le traitement des cartes blanches.");
+        throw e; // remonte pour stopper la boucle
+    }
     }
     
-    private void changerRoi(String nomJoueur) {
+    private void changerRoi(String nomJoueur) throws ResetPartieException {
+        if (partieReinitialisee) throw new ResetPartieException();
     	
     	partie.getRoi().setRoi(false);
     	
@@ -350,9 +360,14 @@ public class ControleurServeur {
             serveur.envoyer(nomJoueurGagnant, "ETAT:Vous avez gagné ce tour! gg");
             serveur.envoyer(nomJoueurGagnant,"VICTOIRE_TOUR");
             partie.getJoueurParNom(nomJoueurGagnant).ajouterScore(1);
-            
+            try{
             changerRoi(nomJoueurGagnant);
+            } catch (ResetPartieException e) {
+                e.printStackTrace();
+                serveur.broadcast("ALERTE:Partie réinitialisée pendant le changement de roi.");
+                
         	
+        }
         }
         else if (action.startsWith("ADMIN:")) {
         	String commande = action.split(":",2)[1];
