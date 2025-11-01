@@ -26,6 +26,12 @@ public class ControleurServeur {
     public Partie getPartie() {
         return partie;
     }
+    public boolean isPartieEnCours() {
+        return partieEnCours;
+    }
+    public void setPartieEnCours(boolean b) {
+        this.partieEnCours = b;
+    }
     
     // ✅ À appeler explicitement depuis Serveur.lancerPartie()
     public void demarrerBoucleJeu() {
@@ -91,6 +97,10 @@ public class ControleurServeur {
 
     
     private void commencerTour() throws InterruptedException {
+        if(!partieEnCours){
+            serveur.broadcast("RESET");
+            return;
+        }
         for(Joueur j : partie.getJoueurs()) {
         	if(j.getScore()>=partie.getScoreGagnant()) {
         		partie.setFinJeu(true);
@@ -135,10 +145,10 @@ public class ControleurServeur {
         for(Joueur j : partie.getJoueurs()) {
             if(j.isRoi()) {
                 serveur.envoyer(j.getNom(),"VOUS_ETES_ROI");
-                serveur.envoyer(j.getNom(), "ETAT:Vous êtes roi ! Attente des joueurs... isRoi ?" + j.isRoi());
+                serveur.envoyer(j.getNom(), "ETAT:Vous êtes roi ! Attente des joueurs...");
             }
             else {
-                serveur.envoyer(j.getNom(), "ETAT:A votre tour de jouer ! isRoi ?" + j.isRoi());
+                serveur.envoyer(j.getNom(), "ETAT:A votre tour de jouer !");
             }
         }
         serveur.broadcast("ROI:"+roi.getNom());
@@ -154,14 +164,17 @@ public class ControleurServeur {
 
         
         System.out.println("⏳ Attente des réponses des joueurs...");
-
+        if(!partieEnCours){
+            serveur.broadcast("RESET");
+            return;
+        }
         
         // ⏳ Attendre que tous jouent
         attendreReponses();
         
         for(Joueur j : partie.getJoueurs()) {
         	if(!j.isRoi()) {
-        		serveur.envoyer(j.getNom(), "ETAT:Le roi choisi le vainqueur...isRoi ?" + j.isRoi());
+        		serveur.envoyer(j.getNom(), "ETAT:Le roi choisi le vainqueur...");
         	}
         	//Cas roi traiter dans la methode traiterCartesBlanches
         }
@@ -195,6 +208,10 @@ public class ControleurServeur {
                         .filter(Joueur::aJoue)
                         .count();
                 System.out.println("  ⏱️ " + nbJoueurs + "/" + nbJoueursAAttendre + " ont joué (" + (timeout/10) + "s)");
+                if(!partieEnCours){
+                    serveur.broadcast("RESET");
+                    return;
+                }
             }
         }
         
@@ -217,18 +234,9 @@ public class ControleurServeur {
     
     private void traiterCartesBlanches() throws InterruptedException{
         ArrayList<String> cartesJouees = partie.getCartesBlanchesActuelles();
-        
-        // 🔍 DEBUG : Vérifier le contenu
-        /*
-        System.out.println("🔍 Debug : cartesJouees contient " + cartesJouees.size() + " éléments");
-        for (int i = 0; i < cartesJouees.size(); i++) {
-            System.out.println("  [" + i + "] = '" + cartesJouees.get(i) + "'");
-        }*/
-        
-        // ✅ Convertir la liste en String avec virgules
+
         String cartesStr = String.join(",", cartesJouees);
         
-        //System.out.println("📊 Cartes jouées : " + cartesStr);
         
         serveur.broadcast("RESULTAT:" + cartesStr);
         
@@ -237,6 +245,10 @@ public class ControleurServeur {
         while(!partie.getRoi().aJoue() && timeout <600) {
             Thread.sleep(100);
             timeout++;
+            if(!partieEnCours){
+                serveur.broadcast("RESET");
+                return;
+            }
         }
         if(timeout>=600) {
             System.out.println("Time out atteint");
@@ -316,6 +328,7 @@ public class ControleurServeur {
         	String nomJoueurGagnant = action.split("#")[1];
         	
             System.out.println("GAGNANT : "+nomJoueurGagnant);
+            serveur.broadcast("CARTE_GAGNANTE:"+nomCarte);
             serveur.broadcast("ETAT:"+"GAGNANT : "+nomJoueurGagnant);
             serveur.envoyer(nomJoueurGagnant, "ETAT:Vous avez gagné ce tour! gg");
             serveur.envoyer(nomJoueurGagnant,"VICTOIRE_TOUR");
@@ -338,7 +351,7 @@ public class ControleurServeur {
         	else if(commande.equals("RESET_GAME")) {
         		System.out.println("🔁 Admin -> Réinitialisation de la partie");
         		partieEnCours = false;
-        		serveur.broadcast("RESET");
+        		
                 int nbJoueurs = partie.getJoueurs().size();
                 nouvellePartie(nbJoueurs);
         	}

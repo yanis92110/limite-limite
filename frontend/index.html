@@ -547,6 +547,28 @@
             else if (message === 'RETIRER_CARTES_JOUEES') {
                 clearPlayedCards();
             }
+            else if(message.startsWith('CARTE_GAGNANTE:')) {
+                const winningCard = message.split(':')[1];
+                const winningCardDiv = document.createElement('div');
+                winningCardDiv.className = 'central-card';
+                winningCardDiv.style.transform = 'scale(1.2)';
+                winningCardDiv.style.boxShadow = '0 0 30px gold';
+                winningCardDiv.style.border = '3px solid gold';
+                winningCardDiv.style.animation = 'fadeIn 0.5s ease-out';
+
+                const img = document.createElement('img');
+                img.src = ''+ winningCard;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'contain';
+
+                winningCardDiv.appendChild(img);
+                document.querySelector('.central-card-area').appendChild(winningCardDiv);
+                setTimeout(() => {
+                    winningCardDiv.remove();
+                }, 3000);
+
+            }
             else if (message === 'DEBUT_PARTIE') {
                 updateStatus('🎮 La partie commence !');
             }

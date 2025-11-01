@@ -26,18 +26,6 @@ public class Partie {
 		this.cartesBlanches = new Paquet(0);
 		this.cartesNoires = new Paquet(1);
 		this.nbJoueurs = nbJoueurs;
-		
-		
-		//Chaque joueur se voit attribuer 8 cartes blanches
-		/* A NE PAS FAIRE ICI
-		for(int i=0;i<nbJoueurs;i++) {
-			Joueur j = new Joueur("Joueur "+i);
-			for(int k = 0; k<8 ;k++) {
-				j.ajouterCarte(this.cartesBlanches.popCarte().getNom());
-			}
-			//On ajoute le joueur avec ses cartes dans la partie
-			this.joueurs.add(j);
-		}*/
 
 		
 	}
